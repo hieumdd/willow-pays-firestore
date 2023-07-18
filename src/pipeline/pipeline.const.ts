@@ -11,6 +11,8 @@ export type Pipeline = {
     schema: any[];
 };
 
+const timestamp = Joi.custom((value: Timestamp) => value.seconds);
+
 export const Events: Pipeline = {
     get: () => {
         const events = firestore.collection('events').stream();
@@ -48,7 +50,7 @@ export const Events: Pipeline = {
                         batchName: Joi.string(),
                         billId: Joi.string(),
                         customerAccountId: Joi.string(),
-                        date: Joi.custom((value: Timestamp) => value.seconds),
+                        date: timestamp,
                         repaymentSequence: Joi.custom((value) => {
                             return isArray(value) ? value : [value];
                         }),
@@ -104,6 +106,74 @@ export const Events: Pipeline = {
                 },
                 { name: 'successfulPayments', type: 'NUMERIC' },
                 { name: 'totalCollected', type: 'NUMERIC' },
+            ],
+        },
+    ],
+};
+
+export const CustomerAccounts: Pipeline = {
+    get: () => {
+        const stream = firestore.collection('customerAccounts').stream();
+
+        const parse = new Transform({
+            objectMode: true,
+            transform: (row: DocumentSnapshot, _, callback) => {
+                callback(null, {
+                    id: row.id,
+                    data: row.data(),
+                });
+            },
+        });
+
+        const schema = Joi.object({
+            id: Joi.string(),
+            data: Joi.object({
+                created: timestamp,
+                displayId: Joi.string(),
+                displayName: Joi.string(),
+                email: Joi.string(),
+                firstName: Joi.string(),
+                id: Joi.string(),
+                lastName: Joi.string(),
+                mobilePhoneNumber: Joi.string(),
+                modified: timestamp,
+                stripeDefaultCard: Joi.string(),
+                stripeId: Joi.string(),
+                verifiedMobilePhoneNumber: Joi.string(),
+                willowCreditLimit: Joi.number().unsafe(),
+            }),
+        });
+
+        const transform = new Transform({
+            objectMode: true,
+            transform: (row: any, _, callback) => {
+                const { value, error } = schema.validate(row, { stripUnknown: true });
+                value ? callback(null, value) : callback(error);
+            },
+        });
+
+        return stream.pipe(parse).pipe(transform);
+    },
+    table: 'CustomerAccounts',
+    schema: [
+        { name: 'id', type: 'STRING' },
+        {
+            name: 'data',
+            type: 'RECORD',
+            fields: [
+                { name: 'created', type: 'TIMESTAMP' },
+                { name: 'displayId', type: 'STRING' },
+                { name: 'displayName', type: 'STRING' },
+                { name: 'email', type: 'STRING' },
+                { name: 'firstName', type: 'STRING' },
+                { name: 'id', type: 'STRING' },
+                { name: 'lastName', type: 'STRING' },
+                { name: 'mobilePhoneNumber', type: 'STRING' },
+                { name: 'modified', type: 'TIMESTAMP' },
+                { name: 'stripeDefaultCard', type: 'STRING' },
+                { name: 'stripeId', type: 'STRING' },
+                { name: 'verifiedMobilePhoneNumber', type: 'STRING' },
+                { name: 'willowCreditLimit', type: 'NUMERIC' },
             ],
         },
     ],

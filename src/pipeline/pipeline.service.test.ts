@@ -2,17 +2,17 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import ndjson from 'ndjson';
 
-import { Events } from './pipeline.const';
+import * as pipelines from './pipeline.const';
 import { runPipeline } from './pipeline.service';
 
 it('query', async () => {
-    const stream = Events.get();
+    const stream = pipelines.Events.get();
 
     return pipeline(stream, ndjson.stringify(), createWriteStream('x.txt'));
 });
 
 it('run-pipeline', async () => {
-    return runPipeline(Events)
+    return runPipeline(pipelines.CustomerAccounts)
         .then((result) => {
             console.log({ result });
         })
