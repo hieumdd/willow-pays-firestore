@@ -3,7 +3,7 @@ import HttpMethod = protos.google.cloud.tasks.v2.HttpMethod;
 import { v4 as uuidv4 } from 'uuid';
 
 const LOCATION = 'us-central1';
-const QUEUE = 'fb-ads-insights';
+const QUEUE = 'firestore-bigquery';
 
 const URL = process.env.PUBLIC_URL || '';
 
