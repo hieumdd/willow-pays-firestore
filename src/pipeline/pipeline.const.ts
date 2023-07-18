@@ -190,19 +190,11 @@ export const PlaidIds: Pipeline = {
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
-                created: timestamp,
-                displayId: Joi.string(),
-                displayName: Joi.string(),
-                email: Joi.string(),
-                firstName: Joi.string(),
-                id: Joi.string(),
-                lastName: Joi.string(),
-                mobilePhoneNumber: Joi.string(),
-                modified: timestamp,
-                stripeDefaultCard: Joi.string(),
-                stripeId: Joi.string(),
-                verifiedMobilePhoneNumber: Joi.string(),
-                willowCreditLimit: Joi.number().unsafe(),
+                active: Joi.boolean(),
+                createdAt: timestamp,
+                customerAccountId: Joi.string(),
+                plaidId: Joi.string(),
+                plaidToken: Joi.string(),
             }),
         });
 
@@ -228,6 +220,59 @@ export const PlaidIds: Pipeline = {
                 { name: 'customerAccountId', type: 'STRING' },
                 { name: 'plaidId', type: 'STRING' },
                 { name: 'plaidToken', type: 'STRING' },
+            ],
+        },
+    ],
+};
+
+export const Scoring: Pipeline = {
+    get: () => {
+        const stream = firestore.collection('scoring').stream();
+
+        const parse = new Transform({
+            objectMode: true,
+            transform: (row: DocumentSnapshot, _, callback) => {
+                callback(null, { id: row.id, data: row.data() });
+            },
+        });
+
+        const schema = Joi.object({
+            id: Joi.string(),
+            data: Joi.object({
+                billId: Joi.string(),
+                customerAccountId: Joi.string(),
+                modelName: Joi.string(),
+                modelType: Joi.string(),
+                resolution: Joi.string(),
+                score: Joi.number().unsafe(),
+                scoringDate: timestamp,
+            }),
+        });
+
+        const transform = new Transform({
+            objectMode: true,
+            transform: (row: any, _, callback) => {
+                const { value, error } = schema.validate(row, { stripUnknown: true });
+                value ? callback(null, value) : callback(error);
+            },
+        });
+
+        return stream.pipe(parse).pipe(transform);
+    },
+    table: 'Scoring',
+    schema: [
+        { name: 'id', type: 'STRING' },
+        {
+            name: 'data',
+            type: 'RECORD',
+            fields: [
+                { name: 'billId', type: 'STRING' },
+                { name: 'customerAccountId', type: 'STRING' },
+                { name: 'modelName', type: 'STRING' },
+                { name: 'modelType', type: 'STRING' },
+                { name: 'resolution', type: 'STRING' },
+                { name: 'score', type: 'NUMERIC' },
+                { name: 'scoringDate', type: 'TIMESTAMP' },
             ],
         },
     ],
