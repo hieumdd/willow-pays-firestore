@@ -12,7 +12,7 @@ it('query', async () => {
 });
 
 it('run-pipeline', async () => {
-    return runPipeline(pipelines.PlaidIds)
+    return runPipeline(pipelines.Stripe)
         .then((result) => {
             console.log({ result });
         })

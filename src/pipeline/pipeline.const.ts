@@ -277,3 +277,56 @@ export const Scoring: Pipeline = {
         },
     ],
 };
+
+export const Stripe: Pipeline = {
+    get: () => {
+        const stream = firestore.collection('stripe').stream();
+
+        const parse = new Transform({
+            objectMode: true,
+            transform: (row: DocumentSnapshot, _, callback) => {
+                callback(null, { id: row.id, data: row.data() });
+            },
+        });
+
+        const schema = Joi.object({
+            id: Joi.string(),
+            data: Joi.object({
+                customerAccountId: Joi.string(),
+                disputed: Joi.number(),
+                failedCharges: Joi.number(),
+                paidCharges: Joi.number(),
+                refunded: Joi.number(),
+                stripeId: Joi.string(),
+                totalCollected: Joi.number().unsafe(),
+            }),
+        });
+
+        const transform = new Transform({
+            objectMode: true,
+            transform: (row: any, _, callback) => {
+                const { value, error } = schema.validate(row, { stripUnknown: true });
+                value ? callback(null, value) : callback(error);
+            },
+        });
+
+        return stream.pipe(parse).pipe(transform);
+    },
+    table: 'Stripe',
+    schema: [
+        { name: 'id', type: 'STRING' },
+        {
+            name: 'data',
+            type: 'RECORD',
+            fields: [
+                { name: 'customerAccountId', type: 'STRING' },
+                { name: 'disputed', type: 'NUMERIC' },
+                { name: 'failedCharges', type: 'NUMERIC' },
+                { name: 'paidCharges', type: 'NUMERIC' },
+                { name: 'refunded', type: 'NUMERIC' },
+                { name: 'stripeId', type: 'STRING' },
+                { name: 'totalCollected', type: 'NUMERIC' },
+            ],
+        },
+    ],
+};
