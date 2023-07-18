@@ -118,10 +118,7 @@ export const CustomerAccounts: Pipeline = {
         const parse = new Transform({
             objectMode: true,
             transform: (row: DocumentSnapshot, _, callback) => {
-                callback(null, {
-                    id: row.id,
-                    data: row.data(),
-                });
+                callback(null, { id: row.id, data: row.data() });
             },
         });
 
@@ -174,6 +171,63 @@ export const CustomerAccounts: Pipeline = {
                 { name: 'stripeId', type: 'STRING' },
                 { name: 'verifiedMobilePhoneNumber', type: 'STRING' },
                 { name: 'willowCreditLimit', type: 'NUMERIC' },
+            ],
+        },
+    ],
+};
+
+export const PlaidIds: Pipeline = {
+    get: () => {
+        const stream = firestore.collection('plaidIds').stream();
+
+        const parse = new Transform({
+            objectMode: true,
+            transform: (row: DocumentSnapshot, _, callback) => {
+                callback(null, { id: row.id, data: row.data() });
+            },
+        });
+
+        const schema = Joi.object({
+            id: Joi.string(),
+            data: Joi.object({
+                created: timestamp,
+                displayId: Joi.string(),
+                displayName: Joi.string(),
+                email: Joi.string(),
+                firstName: Joi.string(),
+                id: Joi.string(),
+                lastName: Joi.string(),
+                mobilePhoneNumber: Joi.string(),
+                modified: timestamp,
+                stripeDefaultCard: Joi.string(),
+                stripeId: Joi.string(),
+                verifiedMobilePhoneNumber: Joi.string(),
+                willowCreditLimit: Joi.number().unsafe(),
+            }),
+        });
+
+        const transform = new Transform({
+            objectMode: true,
+            transform: (row: any, _, callback) => {
+                const { value, error } = schema.validate(row, { stripUnknown: true });
+                value ? callback(null, value) : callback(error);
+            },
+        });
+
+        return stream.pipe(parse).pipe(transform);
+    },
+    table: 'PlaidIds',
+    schema: [
+        { name: 'id', type: 'STRING' },
+        {
+            name: 'data',
+            type: 'RECORD',
+            fields: [
+                { name: 'active', type: 'BOOLEAN' },
+                { name: 'createdAt', type: 'TIMESTAMP' },
+                { name: 'customerAccountId', type: 'STRING' },
+                { name: 'plaidId', type: 'STRING' },
+                { name: 'plaidToken', type: 'STRING' },
             ],
         },
     ],
