@@ -195,6 +195,8 @@ export const PlaidIds: Pipeline = {
                 customerAccountId: Joi.string(),
                 plaidId: Joi.string(),
                 plaidToken: Joi.string(),
+                revocationReason: Joi.string(),
+                revokedAt: timestamp,
             }),
         });
 
@@ -220,6 +222,8 @@ export const PlaidIds: Pipeline = {
                 { name: 'customerAccountId', type: 'STRING' },
                 { name: 'plaidId', type: 'STRING' },
                 { name: 'plaidToken', type: 'STRING' },
+                { name: 'revocationReason', type: 'STRING' },
+                { name: 'revokedAt', type: 'TIMESTAMP' },
             ],
         },
     ],
