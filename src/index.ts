@@ -3,8 +3,10 @@ import cron from 'node-cron';
 import * as pipelines from './pipeline/pipeline.const';
 import { runPipeline } from './pipeline/pipeline.service';
 
-(async () => {
-    await runPipeline(pipelines.CustomerAccounts)
-        .then((result) => console.log(result))
-        .catch((error) => console.log({ error }));
-})();
+Object.values(pipelines).forEach((pipeline) => {
+    cron.schedule('0 */4 * * *', () => {
+        runPipeline(pipeline)
+            .then((result) => console.log(result))
+            .catch((error) => console.log(error));
+    });
+});
