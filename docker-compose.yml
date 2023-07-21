@@ -1,0 +1,10 @@
+services:
+  app:
+    image: us-docker.pkg.dev/willowpays/docker-1/willow-pays-firestore
+    build: .
+    container_name: willow-pays-firestore
+    volumes:
+      - ./${GOOGLE_APPLICATION_CREDENTIALS}:/tmp/{GOOGLE_APPLICATION_CREDENTIALS}
+      - ./data:/app/data
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/{GOOGLE_APPLICATION_CREDENTIALS}
