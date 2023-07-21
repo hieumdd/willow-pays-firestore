@@ -11,6 +11,15 @@ export type Pipeline = {
     schema: any[];
 };
 
+const flatParse = () => {
+    return new Transform({
+        objectMode: true,
+        transform: (row: DocumentSnapshot, _, callback) => {
+            callback(null, { id: row.id, data: row.data() });
+        },
+    });
+};
+
 const timestamp = Joi.custom((value: Timestamp) => value.seconds);
 
 const validationTransform = (schema: Joi.Schema) => {
@@ -227,7 +236,7 @@ export const CustomerAccounts: Pipeline = {
                 }),
             }),
         });
-        
+
         return stream.pipe(subcollections).pipe(validationTransform(schema));
     },
     table: 'CustomerAccounts',
@@ -331,13 +340,6 @@ export const PlaidIds: Pipeline = {
     get: () => {
         const stream = firestore.collection('plaidIds').stream();
 
-        const parse = new Transform({
-            objectMode: true,
-            transform: (row: DocumentSnapshot, _, callback) => {
-                callback(null, { id: row.id, data: row.data() });
-            },
-        });
-
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
@@ -350,7 +352,8 @@ export const PlaidIds: Pipeline = {
                 revokedAt: timestamp,
             }),
         });
-        return stream.pipe(parse).pipe(validationTransform(schema));
+
+        return stream.pipe(flatParse()).pipe(validationTransform(schema));
     },
     table: 'PlaidIds',
     schema: [
@@ -375,13 +378,6 @@ export const Scoring: Pipeline = {
     get: () => {
         const stream = firestore.collection('scoring').stream();
 
-        const parse = new Transform({
-            objectMode: true,
-            transform: (row: DocumentSnapshot, _, callback) => {
-                callback(null, { id: row.id, data: row.data() });
-            },
-        });
-
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
@@ -394,7 +390,7 @@ export const Scoring: Pipeline = {
                 scoringDate: timestamp,
             }),
         });
-        return stream.pipe(parse).pipe(validationTransform(schema));
+        return stream.pipe(flatParse()).pipe(validationTransform(schema));
     },
     table: 'Scoring',
     schema: [
@@ -419,13 +415,6 @@ export const Stripe: Pipeline = {
     get: () => {
         const stream = firestore.collection('stripe').stream();
 
-        const parse = new Transform({
-            objectMode: true,
-            transform: (row: DocumentSnapshot, _, callback) => {
-                callback(null, { id: row.id, data: row.data() });
-            },
-        });
-
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
@@ -438,8 +427,8 @@ export const Stripe: Pipeline = {
                 totalCollected: Joi.number().unsafe(),
             }),
         });
-        
-        return stream.pipe(parse).pipe(validationTransform(schema));
+
+        return stream.pipe(flatParse()).pipe(validationTransform(schema));
     },
     table: 'Stripe',
     schema: [
