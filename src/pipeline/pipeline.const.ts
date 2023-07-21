@@ -13,6 +13,20 @@ export type Pipeline = {
 
 const timestamp = Joi.custom((value: Timestamp) => value.seconds);
 
+const validationTransform = (schema: Joi.Schema) => {
+    return new Transform({
+        objectMode: true,
+        transform: (row: any, _, callback) => {
+            const { value, error } = schema.validate(row, {
+                stripUnknown: true,
+                allowUnknown: true,
+                abortEarly: false,
+            });
+            value && !error ? callback(null, value) : callback(error);
+        },
+    });
+};
+
 export const Events: Pipeline = {
     get: () => {
         const events = firestore.collection('events').stream();
@@ -40,39 +54,33 @@ export const Events: Pipeline = {
             },
         });
 
-        const schema = Joi.object({
-            id: Joi.string(),
-            data: Joi.object({
-                eventCount: Joi.number().unsafe(),
-                paymentEvents: Joi.array().items({
+        return events.pipe(subcollections).pipe(
+            validationTransform(
+                Joi.object({
                     id: Joi.string(),
                     data: Joi.object({
-                        batchName: Joi.string(),
-                        billId: Joi.string(),
-                        customerAccountId: Joi.string(),
-                        date: timestamp,
-                        repaymentSequence: Joi.custom((value) => {
-                            return isArray(value) ? value : [value];
+                        eventCount: Joi.number().unsafe(),
+                        paymentEvents: Joi.array().items({
+                            id: Joi.string(),
+                            data: Joi.object({
+                                batchName: Joi.string(),
+                                billId: Joi.string(),
+                                customerAccountId: Joi.string(),
+                                date: timestamp,
+                                repaymentSequence: Joi.custom((value) => {
+                                    return isArray(value) ? value : [value];
+                                }),
+                                stripeReceiptUrl: Joi.string(),
+                                success: Joi.boolean(),
+                                type: Joi.string(),
+                            }),
                         }),
-                        stripeReceiptUrl: Joi.string(),
-                        success: Joi.boolean(),
-                        type: Joi.string(),
+                        successfulPayments: Joi.number().unsafe(),
+                        totalCollected: Joi.number().unsafe(),
                     }),
                 }),
-                successfulPayments: Joi.number().unsafe(),
-                totalCollected: Joi.number().unsafe(),
-            }),
-        });
-
-        const transform = new Transform({
-            objectMode: true,
-            transform: (row: any, _, callback) => {
-                const { value, error } = schema.validate(row, { stripUnknown: true });
-                value ? callback(null, value) : callback(error);
-            },
-        });
-
-        return events.pipe(subcollections).pipe(transform);
+            ),
+        );
     },
     table: 'Events',
     schema: [
@@ -156,83 +164,73 @@ export const CustomerAccounts: Pipeline = {
             },
         });
 
-        const schema = Joi.object({
-            id: Joi.string(),
-            data: Joi.object({
-                created: timestamp,
-                displayId: Joi.string(),
-                displayName: Joi.string(),
-                email: Joi.string(),
-                firstName: Joi.string(),
-                id: Joi.string(),
-                lastName: Joi.string(),
-                mobilePhoneNumber: Joi.string(),
-                modified: timestamp,
-                stripeDefaultCard: Joi.string(),
-                stripeId: Joi.string(),
-                verifiedMobilePhoneNumber: Joi.string(),
-                willowCreditLimit: Joi.number().unsafe(),
-                willowCreditLimitLocked: Joi.boolean(),
-                bankTransactionSummaries: Joi.array().items({
+        return stream.pipe(subcollections).pipe(
+            validationTransform(
+                Joi.object({
                     id: Joi.string(),
                     data: Joi.object({
-                        balanceDelta: Joi.number().unsafe(),
-                        code: Joi.string(),
-                        customerAccountId: Joi.string(),
-                        depositAmountTotal: Joi.number().unsafe(),
-                        depositCount: Joi.number().unsafe(),
-                        endDate: timestamp,
-                        overdraft: Joi.boolean(),
-                        salariesAmountTotal: Joi.number().unsafe(),
-                        startDate: timestamp,
-                        transactionCount: Joi.number().unsafe(),
-                        withdrawalAmountTotal: Joi.number().unsafe(),
-                        withdrawalCount: Joi.number().unsafe(),
-                    }),
-                }),
-                customerBills: Joi.array().items({
-                    id: Joi.string(),
-                    data: Joi.object({
-                        billAmount: Joi.number().unsafe(),
-                        billDueDate: timestamp,
-                        billPayToName: Joi.string(),
-                        billRepaymentMethod: Joi.string(),
-                        billRepaymentsSelection: Joi.number().unsafe(),
-                        billType: Joi.string(),
                         created: timestamp,
-                        customerAccountId: Joi.string(),
                         displayId: Joi.string(),
                         displayName: Joi.string(),
+                        email: Joi.string(),
+                        firstName: Joi.string(),
                         id: Joi.string(),
+                        lastName: Joi.string(),
+                        mobilePhoneNumber: Joi.string(),
                         modified: timestamp,
-                        numberOfPayments: Joi.number().unsafe(),
+                        stripeDefaultCard: Joi.string(),
+                        stripeId: Joi.string(),
+                        verifiedMobilePhoneNumber: Joi.string(),
+                        willowCreditLimit: Joi.number().unsafe(),
+                        willowCreditLimitLocked: Joi.boolean(),
+                        bankTransactionSummaries: Joi.array().items({
+                            id: Joi.string(),
+                            data: Joi.object({
+                                balanceDelta: Joi.number().unsafe(),
+                                code: Joi.string(),
+                                customerAccountId: Joi.string(),
+                                depositAmountTotal: Joi.number().unsafe(),
+                                depositCount: Joi.number().unsafe(),
+                                endDate: timestamp,
+                                overdraft: Joi.boolean(),
+                                salariesAmountTotal: Joi.number().unsafe(),
+                                startDate: timestamp,
+                                transactionCount: Joi.number().unsafe(),
+                                withdrawalAmountTotal: Joi.number().unsafe(),
+                                withdrawalCount: Joi.number().unsafe(),
+                            }),
+                        }),
+                        customerBills: Joi.array().items({
+                            id: Joi.string(),
+                            data: Joi.object({
+                                billAmount: Joi.number().unsafe(),
+                                billDueDate: timestamp,
+                                billPayToName: Joi.string(),
+                                billRepaymentMethod: Joi.string(),
+                                billRepaymentsSelection: Joi.number().unsafe(),
+                                billType: Joi.string(),
+                                created: timestamp,
+                                customerAccountId: Joi.string(),
+                                displayId: Joi.string(),
+                                displayName: Joi.string(),
+                                id: Joi.string(),
+                                modified: timestamp,
+                                numberOfPayments: Joi.number().unsafe(),
+                            }),
+                        }),
+                        events: Joi.array().items({
+                            id: Joi.string(),
+                            data: Joi.object({
+                                customerAccountId: Joi.string(),
+                                emailResult: Joi.string(),
+                                timestamp: timestamp,
+                                trigger: Joi.string(),
+                            }),
+                        }),
                     }),
                 }),
-                events: Joi.array().items({
-                    id: Joi.string(),
-                    data: Joi.object({
-                        customerAccountId: Joi.string(),
-                        emailResult: Joi.string(),
-                        timestamp: timestamp,
-                        trigger: Joi.string(),
-                    }),
-                }),
-            }),
-        });
-
-        const transform = new Transform({
-            objectMode: true,
-            transform: (row: any, _, callback) => {
-                const { value, error } = schema.validate(row, {
-                    stripUnknown: true,
-                    allowUnknown: true,
-                    abortEarly: false,
-                });
-                value && !error ? callback(null, value) : callback(error);
-            },
-        });
-
-        return stream.pipe(subcollections).pipe(transform);
+            ),
+        );
     },
     table: 'CustomerAccounts',
     schema: [
@@ -342,28 +340,22 @@ export const PlaidIds: Pipeline = {
             },
         });
 
-        const schema = Joi.object({
-            id: Joi.string(),
-            data: Joi.object({
-                active: Joi.boolean(),
-                createdAt: timestamp,
-                customerAccountId: Joi.string(),
-                plaidId: Joi.string(),
-                plaidToken: Joi.string(),
-                revocationReason: Joi.string(),
-                revokedAt: timestamp,
-            }),
-        });
-
-        const transform = new Transform({
-            objectMode: true,
-            transform: (row: any, _, callback) => {
-                const { value, error } = schema.validate(row, { stripUnknown: true });
-                value ? callback(null, value) : callback(error);
-            },
-        });
-
-        return stream.pipe(parse).pipe(transform);
+        return stream.pipe(parse).pipe(
+            validationTransform(
+                Joi.object({
+                    id: Joi.string(),
+                    data: Joi.object({
+                        active: Joi.boolean(),
+                        createdAt: timestamp,
+                        customerAccountId: Joi.string(),
+                        plaidId: Joi.string(),
+                        plaidToken: Joi.string(),
+                        revocationReason: Joi.string(),
+                        revokedAt: timestamp,
+                    }),
+                }),
+            ),
+        );
     },
     table: 'PlaidIds',
     schema: [
@@ -395,28 +387,22 @@ export const Scoring: Pipeline = {
             },
         });
 
-        const schema = Joi.object({
-            id: Joi.string(),
-            data: Joi.object({
-                billId: Joi.string(),
-                customerAccountId: Joi.string(),
-                modelName: Joi.string(),
-                modelType: Joi.string(),
-                resolution: Joi.string(),
-                score: Joi.number().unsafe(),
-                scoringDate: timestamp,
-            }),
-        });
-
-        const transform = new Transform({
-            objectMode: true,
-            transform: (row: any, _, callback) => {
-                const { value, error } = schema.validate(row, { stripUnknown: true });
-                value ? callback(null, value) : callback(error);
-            },
-        });
-
-        return stream.pipe(parse).pipe(transform);
+        return stream.pipe(parse).pipe(
+            validationTransform(
+                Joi.object({
+                    id: Joi.string(),
+                    data: Joi.object({
+                        billId: Joi.string(),
+                        customerAccountId: Joi.string(),
+                        modelName: Joi.string(),
+                        modelType: Joi.string(),
+                        resolution: Joi.string(),
+                        score: Joi.number().unsafe(),
+                        scoringDate: timestamp,
+                    }),
+                }),
+            ),
+        );
     },
     table: 'Scoring',
     schema: [
@@ -448,28 +434,22 @@ export const Stripe: Pipeline = {
             },
         });
 
-        const schema = Joi.object({
-            id: Joi.string(),
-            data: Joi.object({
-                customerAccountId: Joi.string(),
-                disputed: Joi.number(),
-                failedCharges: Joi.number(),
-                paidCharges: Joi.number(),
-                refunded: Joi.number(),
-                stripeId: Joi.string(),
-                totalCollected: Joi.number().unsafe(),
-            }),
-        });
-
-        const transform = new Transform({
-            objectMode: true,
-            transform: (row: any, _, callback) => {
-                const { value, error } = schema.validate(row, { stripUnknown: true });
-                value ? callback(null, value) : callback(error);
-            },
-        });
-
-        return stream.pipe(parse).pipe(transform);
+        return stream.pipe(parse).pipe(
+            validationTransform(
+                Joi.object({
+                    id: Joi.string(),
+                    data: Joi.object({
+                        customerAccountId: Joi.string(),
+                        disputed: Joi.number(),
+                        failedCharges: Joi.number(),
+                        paidCharges: Joi.number(),
+                        refunded: Joi.number(),
+                        stripeId: Joi.string(),
+                        totalCollected: Joi.number().unsafe(),
+                    }),
+                }),
+            ),
+        );
     },
     table: 'Stripe',
     schema: [
