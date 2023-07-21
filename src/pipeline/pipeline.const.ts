@@ -67,6 +67,7 @@ export const Events: Pipeline = {
                                 billId: Joi.string(),
                                 customerAccountId: Joi.string(),
                                 date: timestamp,
+                                declineReason: Joi.string(),
                                 repaymentSequence: Joi.custom((value) => {
                                     return isArray(value) ? value : [value];
                                 }),
@@ -104,6 +105,7 @@ export const Events: Pipeline = {
                                 { name: 'billId', type: 'STRING' },
                                 { name: 'customerAccountId', type: 'STRING' },
                                 { name: 'date', type: 'TIMESTAMP' },
+                                { name: 'declineReason', type: 'STRING' },
                                 { name: 'repaymentSequence', type: 'NUMERIC', mode: 'REPEATED' },
                                 { name: 'stripeReceiptUrl', type: 'STRING' },
                                 { name: 'success', type: 'BOOLEAN' },
