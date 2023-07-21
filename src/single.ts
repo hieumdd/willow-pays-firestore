@@ -1,3 +1,4 @@
+require('dotenv').config();
 import { program } from 'commander';
 
 import * as pipelines from './pipeline/pipeline.const';
@@ -13,7 +14,5 @@ program.parse(process.argv);
         return;
     }
 
-    runPipeline(pipelines[pipeline])
-        .then((result) => console.log({ result }))
-        .catch((error) => console.log({ error }));
+    await runPipeline(pipelines[pipeline]);
 })();
