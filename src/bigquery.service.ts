@@ -1,5 +1,7 @@
 import { BigQuery, TableSchema } from '@google-cloud/bigquery';
 
+import * as LoggingService from './logging.service';
+
 const client = new BigQuery();
 
 const DATASET = 'Firestore2';
@@ -18,5 +20,8 @@ export const createLoadStream = (options: CreateLoadStreamOptions) => {
             sourceFormat: 'NEWLINE_DELIMITED_JSON',
             createDisposition: 'CREATE_IF_NEEDED',
             writeDisposition: 'WRITE_TRUNCATE',
+        })
+        .on('job', (job) => {
+            LoggingService.debug({ action: 'load', table: options.table, id: job.id });
         });
 };

@@ -113,8 +113,6 @@ export const Events: Pipeline = {
 
 export const CustomerAccounts: Pipeline = {
     get: () => {
-        let count = 0;
-
         const stream = firestore.collection('customerAccounts').stream();
 
         const subcollections = new Transform({
@@ -127,34 +125,30 @@ export const CustomerAccounts: Pipeline = {
                 ] as const;
 
                 Promise.all(
-                    collections.map((collection) => {
+                    collections.map(async (collection) => {
                         return row.ref
                             .collection(collection)
                             .listDocuments()
-                            .then((refs) => Promise.all(refs.map((ref) => ref.get())));
+                            .then((refs) => Promise.all(refs.map((ref) => ref.get())))
+                            .then((snapshots) => snapshots.filter((snapshot) => !!snapshot.exists));
                     }),
                 )
-                    .then((snapshots) => {
-                        const [bankTransactionSummaries, customerBills, events] = snapshots;
+                    .then((collectionSnapshots) => {
+                        const [bankTransactionSummaries, customerBills, events] =
+                            collectionSnapshots.map((snapshots) => {
+                                return snapshots.map((snapshot) => ({
+                                    id: snapshot.id,
+                                    data: snapshot.data(),
+                                }));
+                            });
 
                         callback(null, {
                             id: row.id,
                             data: {
                                 ...row.data(),
-                                bankTransactionSummaries: bankTransactionSummaries.map(
-                                    (snapshot) => ({
-                                        id: snapshot.id,
-                                        data: snapshot.data(),
-                                    }),
-                                ),
-                                customerBills: customerBills.map((snapshot) => ({
-                                    id: snapshot.id,
-                                    data: snapshot.data(),
-                                })),
-                                events: events.map((snapshot) => ({
-                                    id: snapshot.id,
-                                    data: snapshot.data(),
-                                })),
+                                bankTransactionSummaries,
+                                customerBills,
+                                events,
                             },
                         });
                     })
@@ -178,6 +172,7 @@ export const CustomerAccounts: Pipeline = {
                 stripeId: Joi.string(),
                 verifiedMobilePhoneNumber: Joi.string(),
                 willowCreditLimit: Joi.number().unsafe(),
+                willowCreditLimitLocked: Joi.boolean(),
                 bankTransactionSummaries: Joi.array().items({
                     id: Joi.string(),
                     data: Joi.object({
@@ -203,7 +198,6 @@ export const CustomerAccounts: Pipeline = {
                         billPayToName: Joi.string(),
                         billRepaymentMethod: Joi.string(),
                         billRepaymentsSelection: Joi.number().unsafe(),
-                        billStatus: Joi.string(),
                         billType: Joi.string(),
                         created: timestamp,
                         customerAccountId: Joi.string(),
@@ -229,10 +223,12 @@ export const CustomerAccounts: Pipeline = {
         const transform = new Transform({
             objectMode: true,
             transform: (row: any, _, callback) => {
-                count = count + 1;
-                console.log(count);
-                const { value, error } = schema.validate(row, { stripUnknown: true });
-                value ? callback(null, value) : callback(error);
+                const { value, error } = schema.validate(row, {
+                    stripUnknown: true,
+                    allowUnknown: true,
+                    abortEarly: false,
+                });
+                value && !error ? callback(null, value) : callback(error);
             },
         });
 
@@ -258,6 +254,7 @@ export const CustomerAccounts: Pipeline = {
                 { name: 'stripeId', type: 'STRING' },
                 { name: 'verifiedMobilePhoneNumber', type: 'STRING' },
                 { name: 'willowCreditLimit', type: 'NUMERIC' },
+                { name: 'willowCreditLimitLocked', type: 'BOOLEAN' },
                 {
                     name: 'bankTransactionSummaries',
                     type: 'RECORD',
@@ -299,7 +296,6 @@ export const CustomerAccounts: Pipeline = {
                                 { name: 'billPayToName', type: 'STRING' },
                                 { name: 'billRepaymentMethod', type: 'STRING' },
                                 { name: 'billRepaymentsSelection', type: 'STRING' },
-                                { name: 'billStatus', type: 'STRING' },
                                 { name: 'billType', type: 'STRING' },
                                 { name: 'created', type: 'TIMESTAMP' },
                                 { name: 'customerAccountId', type: 'STRING' },
