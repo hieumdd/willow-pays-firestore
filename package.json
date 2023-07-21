@@ -15,6 +15,7 @@
     "dependencies": {
         "@google-cloud/bigquery": "^6.2.1",
         "@google-cloud/firestore": "^6.6.1",
+        "commander": "^11.0.0",
         "joi": "^17.9.2",
         "lodash": "^4.17.21",
         "ndjson": "^2.0.0",
