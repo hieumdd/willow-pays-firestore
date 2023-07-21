@@ -1,6 +1,6 @@
 import { BigQuery, TableSchema } from '@google-cloud/bigquery';
 
-import * as LoggingService from './logging.service';
+import { logger } from './logging.service';
 
 const client = new BigQuery();
 
@@ -22,6 +22,6 @@ export const createLoadStream = (options: CreateLoadStreamOptions) => {
             writeDisposition: 'WRITE_TRUNCATE',
         })
         .on('job', (job) => {
-            LoggingService.debug({ action: 'load', table: options.table, id: job.id });
+            logger.info({ action: 'load', table: options.table, id: job.id });
         });
 };

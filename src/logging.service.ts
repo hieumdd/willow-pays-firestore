@@ -1,18 +1,12 @@
-enum Severity {
-    DEBUG = 'DEBUG',
-    INFO = 'INFO',
-    WARN = 'WARN',
-    ERROR = 'ERROR',
-}
+import { createLogger, format, transports } from 'winston';
+const { combine, metadata, printf } = format;
 
-const log = (severity: Severity) => {
-    return (message: any) => console.log(JSON.stringify({ severity, message }));
-};
-
-export const debug = log(Severity.DEBUG);
-
-export const info = log(Severity.INFO);
-
-export const warn = log(Severity.WARN);
-
-export const error = log(Severity.ERROR);
+export const logger = createLogger({
+    format: combine(
+        metadata(),
+        printf(({ level, message, metadata }) => {
+            return JSON.stringify({ severity: level, message, metadata });
+        }),
+    ),
+    transports: [new transports.Console()],
+});

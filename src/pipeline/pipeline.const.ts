@@ -1,9 +1,9 @@
 import { Readable, Transform } from 'node:stream';
 import { DocumentSnapshot, Timestamp } from '@google-cloud/firestore';
+import { isArray } from 'lodash';
 import Joi from 'joi';
 
 import { firestore } from '../firestore.service';
-import { isArray } from 'lodash';
 
 export type Pipeline = {
     get: () => Readable;
