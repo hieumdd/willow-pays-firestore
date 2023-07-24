@@ -47,6 +47,7 @@ export const Events: Pipeline = {
                     .collection('PAYMENT_EVENT')
                     .listDocuments()
                     .then((refs) => Promise.all(refs.map((ref) => ref.get())))
+                    .then((snapshots) => snapshots.filter((snapshot) => !!snapshot.exists))
                     .then((snapshots) => {
                         callback(null, {
                             id: row.id,
