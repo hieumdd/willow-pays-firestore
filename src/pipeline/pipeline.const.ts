@@ -177,6 +177,12 @@ export const CustomerAccounts: Pipeline = {
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
+                accountStatus: Joi.string(),
+                bankTransactionSummaryBalance: Joi.number().unsafe(),
+                bankTransactionSummaryDate: timestamp,
+                bkp_plaidCredentialUpdateRequired: Joi.boolean(),
+                bkp_plaidExtractionDate: timestamp,
+                bkp_plaidId: Joi.string(),
                 created: timestamp,
                 displayId: Joi.string(),
                 displayName: Joi.string(),
@@ -247,6 +253,12 @@ export const CustomerAccounts: Pipeline = {
             name: 'data',
             type: 'RECORD',
             fields: [
+                { name: 'accountStatus', type: 'STRING' },
+                { name: 'bankTransactionSummaryBalance', type: 'NUMERIC' },
+                { name: 'bankTransactionSummaryDate', type: 'TIMESTAMP' },
+                { name: 'bkp_plaidCredentialUpdateRequired', type: 'BOOLEAN' },
+                { name: 'bkp_plaidExtractionDate', type: 'TIMESTAMP' },
+                { name: 'bkp_plaidId', type: 'STRING' },
                 { name: 'created', type: 'TIMESTAMP' },
                 { name: 'displayId', type: 'STRING' },
                 { name: 'displayName', type: 'STRING' },
