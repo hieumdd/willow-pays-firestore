@@ -1,4 +1,4 @@
-FROM node:18-bullseye-slim as builder
+FROM node:18-bookworm-slim as builder
 
 ENV NODE_ENV build
 
@@ -16,7 +16,7 @@ RUN npm prune --production
 
 # ---
 
-FROM node:18-bullseye-slim
+FROM node:18-bookworm-slim
 
 ENV NODE_ENV production
 
