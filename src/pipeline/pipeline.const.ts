@@ -1,6 +1,6 @@
 import { Readable, Transform } from 'node:stream';
 import { DocumentSnapshot, Timestamp } from '@google-cloud/firestore';
-import { isArray } from 'lodash';
+import { isArray, isNumber } from 'lodash';
 import Joi from 'joi';
 
 import { firestore } from '../firestore.service';
@@ -177,8 +177,10 @@ export const CustomerAccounts: Pipeline = {
         const schema = Joi.object({
             id: Joi.string(),
             data: Joi.object({
-                accountStatus: Joi.string(),
-                bankTransactionSummaryBalance: Joi.number().unsafe(),
+                accountStatus: Joi.string().allow(null),
+                bankTransactionSummaryBalance: Joi.number().custom((value) => {
+                    return isNumber(value) ? value.toFixed(2) : value;
+                }),
                 bankTransactionSummaryDate: timestamp,
                 bkp_plaidCredentialUpdateRequired: Joi.boolean(),
                 bkp_plaidExtractionDate: timestamp,
