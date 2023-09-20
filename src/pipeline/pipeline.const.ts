@@ -31,7 +31,13 @@ const validationTransform = (schema: Joi.Schema) => {
                 allowUnknown: true,
                 abortEarly: false,
             });
-            value && !error ? callback(null, value) : callback(error);
+
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            callback(null, value);
         },
     });
 };
@@ -461,6 +467,40 @@ export const Stripe: Pipeline = {
                 { name: 'refunded', type: 'NUMERIC' },
                 { name: 'stripeId', type: 'STRING' },
                 { name: 'totalCollected', type: 'NUMERIC' },
+            ],
+        },
+    ],
+};
+
+export const UserIDGAParams: Pipeline = {
+    get: () => {
+        const stream = firestore.collection('useridGAParams').stream();
+
+        const schema = Joi.object({
+            id: Joi.string(),
+            data: Joi.object({
+                pseudo_id: Joi.string().allow(null),
+                user_id: Joi.string(),
+                utm_campaign: Joi.string().allow(null),
+                utm_medium: Joi.string().allow(null),
+                utm_source: Joi.string().allow(null),
+            }),
+        });
+
+        return stream.pipe(flatParse()).pipe(validationTransform(schema));
+    },
+    table: 'UserIDGAParams',
+    schema: [
+        { name: 'id', type: 'STRING' },
+        {
+            name: 'data',
+            type: 'RECORD',
+            fields: [
+                { name: 'pseudo_id', type: 'STRING' },
+                { name: 'user_id', type: 'STRING' },
+                { name: 'utm_campaign', type: 'STRING' },
+                { name: 'utm_medium', type: 'STRING' },
+                { name: 'utm_source', type: 'STRING' },
             ],
         },
     ],
