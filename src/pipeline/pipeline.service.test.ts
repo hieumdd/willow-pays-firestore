@@ -12,7 +12,7 @@ it('query', async () => {
 });
 
 it('run-pipeline', async () => {
-    return runPipeline(pipelines.Events)
+    return runPipeline(pipelines.UserIDGAParams)
         .then((result) => {
             console.log({ result });
         })

@@ -10,7 +10,10 @@ export const runPipeline = async (pipeline_: pipelines.Pipeline) => {
 
     return pipeline(pipeline_.get(), ndjson.stringify(), createLoadStream(pipeline_))
         .then(() => logger.info({ action: 'done', value: pipeline_.table }))
-        .catch((error) => logger.error(error));
+        .catch((error) => {
+            logger.error(error);
+            throw error;
+        });
 };
 
 export type CreatePipelineTasksOptions = {
