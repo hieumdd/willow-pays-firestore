@@ -2,6 +2,7 @@ import { Readable, Transform } from 'node:stream';
 import { DocumentSnapshot, Timestamp } from '@google-cloud/firestore';
 import { isArray, isNumber } from 'lodash';
 import Joi from 'joi';
+import { dayjs } from '../dayjs';
 
 import { firestore } from '../firestore.service';
 
@@ -485,6 +486,7 @@ export const UserIDGAParams: Pipeline = {
                 utm_medium: Joi.string().allow(null),
                 utm_source: Joi.string().allow(null),
             }),
+            _batched_at: Joi.any().default(dayjs.utc().toISOString()),
         });
 
         return stream.pipe(flatParse()).pipe(validationTransform(schema));
@@ -503,5 +505,6 @@ export const UserIDGAParams: Pipeline = {
                 { name: 'utm_source', type: 'STRING' },
             ],
         },
+        { name: '_batched_at', type: 'TIMESTAMP' },
     ],
 };
