@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ssh",
+            "type": "shell",
+            "command": "gcloud",
+            "args": [
+                "compute",
+                "ssh",
+                "--zone",
+                "us-central1-a",
+                "firestore-etl",
+                "--project",
+                "willowpays"
+            ],
+            "dependsOn": [
+                "activate-service-account",
+                "set-project"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "activate-service-account",
+            "type": "shell",
+            "command": "gcloud",
+            "args": [
+                "auth",
+                "activate-service-account",
+                "--key-file",
+                "./service-account.json"
+            ]
+        },
+        {
+            "label": "set-project",
+            "type": "shell",
+            "command": "gcloud",
+            "args": [
+                "config",
+                "set",
+                "project",
+                "willowpays"
+            ]
+        },
+    ]
+}
