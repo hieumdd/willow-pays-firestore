@@ -5,12 +5,9 @@ import Joi from 'joi';
 import { dayjs } from '../dayjs';
 
 import { firestore } from '../firestore.service';
+import { CreateLoadStreamOptions } from '../bigquery.service';
 
-export type Pipeline = {
-    get: () => Readable;
-    table: string;
-    schema: any[];
-};
+export type Pipeline = { get: () => Readable } & CreateLoadStreamOptions;
 
 const flatParse = () => {
     return new Transform({
@@ -134,6 +131,7 @@ export const Events: Pipeline = {
             ],
         },
     ],
+    writeDisposition: 'WRITE_TRUNCATE',
 };
 
 export const CustomerAccounts: Pipeline = {
@@ -358,6 +356,7 @@ export const CustomerAccounts: Pipeline = {
             ],
         },
     ],
+    writeDisposition: 'WRITE_TRUNCATE',
 };
 
 export const PlaidIds: Pipeline = {
@@ -396,6 +395,7 @@ export const PlaidIds: Pipeline = {
             ],
         },
     ],
+    writeDisposition: 'WRITE_TRUNCATE',
 };
 
 export const Scoring: Pipeline = {
@@ -433,6 +433,7 @@ export const Scoring: Pipeline = {
             ],
         },
     ],
+    writeDisposition: 'WRITE_TRUNCATE',
 };
 
 export const Stripe: Pipeline = {
@@ -471,6 +472,7 @@ export const Stripe: Pipeline = {
             ],
         },
     ],
+    writeDisposition: 'WRITE_TRUNCATE',
 };
 
 export const UserIDGAParams: Pipeline = {
@@ -491,7 +493,7 @@ export const UserIDGAParams: Pipeline = {
 
         return stream.pipe(flatParse()).pipe(validationTransform(schema));
     },
-    table: 'UserIDGAParams',
+    table: 'p_UserIDGAParams',
     schema: [
         { name: 'id', type: 'STRING' },
         {
@@ -507,4 +509,5 @@ export const UserIDGAParams: Pipeline = {
         },
         { name: '_batched_at', type: 'TIMESTAMP' },
     ],
+    writeDisposition: 'WRITE_APPEND',
 };
