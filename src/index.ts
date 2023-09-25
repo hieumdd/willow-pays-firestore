@@ -7,9 +7,7 @@ import { runPipeline } from './pipeline/pipeline.service';
 
 Object.values(pipelines).forEach((pipeline) => {
     logger.info({ action: 'setting-schedule', pipeline: pipeline.table });
-    cron.schedule('0 */4 * * *', () => {
-        runPipeline(pipeline);
-    });
+    cron.schedule('0 */4 * * *', () => runPipeline(pipeline));
 });
 
 process.on('SIGINT', () => {
